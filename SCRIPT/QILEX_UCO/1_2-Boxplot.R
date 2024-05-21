@@ -5,9 +5,9 @@
 ################################################################################
 library(ggplot2); library(gridExtra); library(grid); library(cowplot)
 
-data <- read_csv("./DATA/UCO/CSV/selected_columns.csv")
+data <- read_csv("./DATA/UNISS/CSV/selected_columns_adj.csv")
 
-data$...1 <- NULL
+data$lenPerVol <- NULL
 
 colnames(data)
 
@@ -29,47 +29,40 @@ leg <- ggplot(data, aes(x = treatment, y = length, fill = inoculum)) +
 # Extract the legend from one of the graphs.
 legend <- cowplot::get_legend(leg)
 
-plots <- list()  # Lista per contenere i grafici
+# Creazione della lista di grafici
+plots <- list()
 
-# Creazione dei grafici
+variables <- colnames(data[,5:12])
+
+# Ciclo for per creare i grafici
 for (var in variables) {
-  plot <- ggplot(data, aes(x = treatment, y = .data[[var]], fill = inoculum)) +
-    geom_boxplot() +
+  plot <- ggplot(data, aes_string(x = "treatment", y = var, fill = "inoculum")) +
+    geom_boxplot(show.legend = FALSE) +
     labs(x = ifelse(var == "length", "Treatments", ""), 
          y = switch(var,
-                    "dry_solo" = "Dry Weight (g)",
                     "length" = "Total Length (cm)",
-                    "AvgDiam" = "Avg Diameter (cm)",
-                    "rootVolume" = "Total Roots Volume (cm3)",
+                    "VOLT" = "Total Roots Volume (cm3)",
+                    "AvgDiam" = "AvgDiam (cm)",
                     "FRL" = "Fine Root Length (cm)",
                     "CRL" = "Coarse Root Length (cm)",
-                    "FVOL" = "Fine Root Volume (cm3)",
-                    "CVOL" = "Coarse Root Volume (cm3)")) +
+                    "FRS" = "Fine Root Surface (cm2)",
+                    "CRS" = "Coarse Root Surface (cm2)",
+                    "FVOL" = "Fine Root Volume (cm3)")) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10)) +
     scale_fill_manual(values = colors) +
-    theme(legend.position = "none")  # Rimuove la legenda dai singoli grafici
+    theme(legend.position = "none")
   
-  plots[[var]] <- plot  # Aggiungi il grafico alla lista
+  plots[[var]] <- plot
 }
 
-# Creazione della legenda separata
-legend_plot <- ggplot(data, aes(x = treatment, y = .data[[variables[1]]], fill = inoculum)) +
-  geom_boxplot() +
-  scale_fill_manual(values = colors) +
-  theme(legend.position = "bottom", legend.title = element_blank()) +
-  guides(fill = guide_legend(nrow = 1))
+# Posizionamento della legenda nella griglia
+grid1 <- grid.arrange(arrangeGrob(grobs = plots, ncol = 3), bottom = legend)
 
-legend <- get_legend(legend_plot)
-
-# Posizionamento dei grafici nella griglia con la legenda
-grid1 <- grid.arrange(
-  arrangeGrob(grobs = plots, ncol = 3), 
-  bottom = legend, 
-  top = textGrob("Q. ilex UCO", gp = gpar(fontsize = 16))
-)
+# Aggiunta del titolo al grafico composto
+grid1 <- grid.arrange(grobs = list(grid1), top = textGrob("Q suber UNISS", gp = gpar(fontsize = 16)))
 
 # Specifies the path to save
-file_path <- "./GRAPHS/boxPlots_qilex_UCO.png"
+file_path <- "./GRAPHS/boxPlots_suber_UNISS.png"
 
 # Save the grid as a PNG file.
 ggsave(file_path, grid1, width = 16, height = 12, dpi = 700)
